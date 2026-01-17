@@ -6,7 +6,7 @@ Whats this?
       Author: Grzegorz Skulimowski
       Web:    www.hiperapps.com
 
-      License: LGPL with linking exception.
+      License: LGPL with linking exception. See COPYING.modifiedLGPL.txt
 
 
 
@@ -1853,3 +1853,4 @@ begin
 end;
 
 end.
+
