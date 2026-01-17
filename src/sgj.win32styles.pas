@@ -8,9 +8,6 @@
 
  License: LGPL with linking exception.
 
-
-
-
  Some part of this code is delivered from uwin32widgetsetdark.pas from
  Double Commander   https://github.com/doublecmd/doublecmd
 
@@ -23,28 +20,7 @@ unit SGJ.Win32Styles;
 interface
 
 uses
-  Windows, Themes, UxTheme, Win32Themes, jwawingdi, dwmapi,
-  {$IFDEF CS_WithSynEdit}
-    synedit,
-  {$EndIF}
-  {$IFDEF CS_WithATSynEdit}
-   ATSynEdit,
-  {$EndIF}
-  StdCtrls, ExtCtrls, Grids, CheckLst,
-  Classes, SysUtils, DDetours, Graphics, bgrabitmap,
-  Win32Proc, Win32Int,
-  CommCtrl, Controls, ComCtrls, Forms, Menus,
-  Win32WSComCtrls, Win32WSControls, WSComCtrls, WSLCLClasses, Win32WSForms, WSForms,
-  Win32WSStdCtrls, WSStdCtrls, WSMenus, Win32WSMenus,
-  LCLType, fpimage, Win32Extra,
-
-  SGJ.Win32Styles.Themes;
-
-var
-  CS_DEFAULT_CLASS: PWideChar = 'Explorer';
-
-type
-  TGetSysColor = function(nIndex: integer): DWORD; stdcall;
+  Windows, UxTheme, Win32Themes;
 
 type
   TDrawThemeBackground = function(hTheme: THandle; hdc: HDC;
@@ -56,15 +32,39 @@ type
     pszText: LPCWSTR; iCharCount: integer; dwTextFlags, dwTextFlags2: DWORD;
     const pRect: TRect): HRESULT; stdcall;
 
+var
+  WinDrawThemeBackground: TDrawThemeBackground= nil;
+  Win32Theme: TWin32ThemeServices;
+
+procedure InstallCustomStyle;
+procedure RemoveCustomStyle;
+
+implementation
+
+uses
+  SGJ.Win32Styles.Themes,
+  {$IFDEF CS_WithSynEdit}
+  synedit,
+  {$EndIF}
+  {$IFDEF CS_WithATSynEdit}
+  ATSynEdit
+  {$EndIF}
+  dwmapi, themes, Win32Proc, Win32Int, Win32Extra, DDetours,
+  Classes, SysUtils, StdCtrls, ExtCtrls,CommCtrl, Controls, ComCtrls, Forms, Menus,
+  LCLType, fpimage, Grids, CheckLst, Graphics, bgrabitmap,
+  Win32WSComCtrls, Win32WSControls, WSComCtrls, WSLCLClasses, Win32WSForms, WSForms,
+  Win32WSStdCtrls, WSStdCtrls, WSMenus, Win32WSMenus;
+
 type
-  TOpenThemeData= function(hwnd: HWND; pszClassList: LPCWSTR): HTHEME; stdcall ;
+  TGetSysColor = function(nIndex: integer): DWORD; stdcall;
 
 var
   WinGetSysColor: TGetSysColor= nil;
-  WinDrawThemeBackground: TDrawThemeBackground= nil;
   WinDrawThemeText: TDrawThemeText= nil;
-  Win32Theme: TWin32ThemeServices;
   CustomFormWndProc: Windows.WNDPROC;
+
+const
+  CS_DEFAULT_CLASS: PWideChar = 'Explorer';
 
 const
   ID_SUB_SCROLLBOX = 1;
@@ -74,12 +74,6 @@ const
   ID_SUB_TRACKBAR = 5;
   ID_SUB_LISTVIEW = 6;
   ID_SUB_TOOLBAR = 7;
-
-procedure InstallCustomStyle;
-procedure RemoveCustomStyle;
-
-implementation
-
 
 type
   { Controls }
