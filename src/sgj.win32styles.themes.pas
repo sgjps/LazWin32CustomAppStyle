@@ -1,6 +1,6 @@
 {
 Whats this?
-      Basic Style manager for Win32 apps created with Lazarus
+      Simple Style manager for Win32 apps created with Lazarus
       It's override default Window theme parts and states.
 
       Author: Grzegorz Skulimowski
@@ -1853,4 +1853,5 @@ begin
 end;
 
 end.
+
 
