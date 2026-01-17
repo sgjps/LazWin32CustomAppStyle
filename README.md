@@ -1,6 +1,6 @@
 ![License](/Images/license.svg) ![Lazarus](/Images/lazarus.svg)
 
-# LazWin32CustomAppStyle
+# SGJ LazWin32CustomAppStyle
 
 What's this?
 
