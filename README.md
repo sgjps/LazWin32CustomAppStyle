@@ -2,6 +2,16 @@
 
 # LazWin32CustomAppStyle
 
+What's this?
+
+Simple Style manager for Win32/64 apps created on Lazarus.
+
+How it works?
+
+It's replace original window theme. Controls Parts and States are custom theming. 
+
+Its usefull for custom DARK Mode or create theme for app.
+
 ![Image1](/Images/WinAll.webp)
 
 # Donate 
