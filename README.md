@@ -1,6 +1,8 @@
+![License](/Images/license.svg)
+
 # LazWin32CustomAppStyle
 
-
+![Image1](/Images/WinAll.webp)
 
 # Donate 
 
