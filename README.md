@@ -2,15 +2,22 @@
 
 # SGJ LazWin32CustomAppStyle
 
-What's this?
+## What's this?
 
 Simple Style manager for Win32/64 apps created on Lazarus.
 
-How it works?
+## How it works?
 
 It's replace original window theme. Controls Parts and States are custom theming. 
 
-Its usefull for custom DARK Mode or create theme for app.
+It's usefull for custom DARK Mode or create theme for app.
+
+## Compatibility
+* Windows 11
+* Windows 10
+* Windows 8.x
+* Windows 7
+* Windows Vista
 
 ![Image1](/Images/WinAll.webp)
 
