@@ -1,3 +1,11 @@
+
+{
+Sample dark themeBase implementation for custom themes
+
+1. Save copy with other unit name
+2. Change colors and settings
+
+}
 unit sgj.win32styles.themes.dark;
 
 {$mode ObjFPC}{$H+}
@@ -8,10 +16,10 @@ uses
   Graphics, SysUtils,
   SGJ.Win32Styles.Themes;
 
-Procedure SetDarkColors;
+Procedure CS_SetColors;
 implementation
 
-procedure SetDarkColors;
+procedure CS_SetColors;
 begin
   //Win10 17763+
    CS_DarkTitleBar:=false; //Enable native Windows Dark Mode Title bar
@@ -276,4 +284,5 @@ begin
 end;
 
 end.
+
 
