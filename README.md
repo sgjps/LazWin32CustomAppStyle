@@ -1,4 +1,4 @@
-![License](/Images/license.svg) ![Lazarus](/Images/lazarus.svg)
+![License](/Images/license.svg) ![Lazarus](/Images/lazarus.svg) [![HomePage](/Images/homepage.svg)](https://www.hiperapps.com)
 
 # SGJ LazWin32CustomAppStyle
 
