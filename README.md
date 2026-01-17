@@ -12,6 +12,11 @@ It's replace original window theme. Controls Parts and States are custom theming
 
 It's usefull for custom DARK Mode or create theme for app.
 
+## Requirements
+* Lazarus IDE (Tested on v4.4 with FPC 3.2.2)
+* [DDetours](https://github.com/MahdiSafsafi/DDetours)
+* [Segoe MDL2 Assets icons](https://aka.ms/SegoeFonts) (on Windows 10/11 it's installed by default)
+
 ## Compatibility
 * Windows 11
 * Windows 10
