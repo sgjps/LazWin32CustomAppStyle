@@ -8,9 +8,9 @@ Simple Style manager for Win32/64 apps created on Lazarus.
 
 ## How it works?
 
-It's replace original window theme. Controls Parts and States are custom theming. 
+It's replace original window theme. It's replace original window theme. Controls Parts and States is painted by custom theming.
 
-It's usefull for custom DARK Mode or create theme for app.
+It's usefull for create custom Dark Mode or another theme for app.
 
 ## Requirements
 * Lazarus IDE (Tested on v4.4 with FPC 3.2.2)
