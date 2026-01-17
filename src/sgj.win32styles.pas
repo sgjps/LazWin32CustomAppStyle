@@ -6,7 +6,7 @@
  Author: Grzegorz Skulimowski
  Web:    www.hiperapps.com
 
- License: LGPL with linking exception.
+ License: LGPL with linking exception. See COPYING.modifiedLGPL.txt
 
  Some part of this code is delivered from uwin32widgetsetdark.pas from
  Double Commander   https://github.com/doublecmd/doublecmd
@@ -781,3 +781,4 @@ end;
 finalization
 RemoveCustomStyle;
 end.
+
