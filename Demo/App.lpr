@@ -27,10 +27,11 @@ begin
   {$POP}
   Application.Initialize;
   {$IFDEF MSWINDOWS}
-  sgj.win32styles.themes.dark.CS_SetColors;
-  sgj.win32styles.InstallCustomStyle;
+  sgj.win32styles.themes.dark.CS_SetColors;   // Set Theme
+  sgj.win32styles.InstallCustomStyle;         // Install Theme
   {$ENDIF}
   Application.CreateForm(TForm1, Form1);
   Application.Run;
 end.
+
 
