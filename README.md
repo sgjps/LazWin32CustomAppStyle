@@ -25,6 +25,9 @@ It's usefull for create custom Dark Mode or another theme for app.
 * Windows 7
 * Windows Vista
 
+> [!WARNING]
+> It works now, but there is no guarantee it will work in the future. 
+
 ## How to use?
 Add DDetours and this src for unit path.
 Open Your project *.LPR file.
