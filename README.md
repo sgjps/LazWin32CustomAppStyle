@@ -30,7 +30,7 @@ Add DDetours and this src for unit path.
 Open Your project *.LPR file.
 Add to uses SGJ.Win32Styles, and your custom theme(example: sgj.win32styles.themes.dark).
 
-Add after Application.Initialize; and Application.CreateForm(...) :
+Add after Application.Initialize; and before Application.CreateForm(...) :
   SGJ.Win32Styles.Themes.Dark.CS_SetCustomColors;
   SGJ.Win32Styles.InstallCustomStyle;
 
