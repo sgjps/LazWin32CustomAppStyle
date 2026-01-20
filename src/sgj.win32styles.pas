@@ -93,6 +93,12 @@ type
       const AParams: TCreateParams): HWND; override;
   end;
 
+  TWin32WSCustomTabControlStyled= class(TWin32WSCustomTabControl)
+  published
+    class function CreateHandle(const AWinControl: TWinControl;
+      const AParams: TCreateParams): HWND; override;
+  end;
+
   { ListBox }
 
   TWin32WSCustomListBoxStyled = class(TWin32WSCustomListBox)
@@ -273,6 +279,9 @@ begin
 
   WSComCtrls.RegisterCustomListView;
   RegisterWSComponent(TCustomListView, TWin32WSCustomListViewStyled);
+
+  ComCtrls.RegisterCustomTabControl;
+  RegisterWSComponent(TCustomTabControl, TWin32WSCustomTabControlStyled);
 
   WSStdCtrls.RegisterCustomListBox;
   RegisterWSComponent(TCustomListBox, TWin32WSCustomListBoxStyled);
@@ -847,11 +856,18 @@ begin
         SetPreferredAppMode_ForceDark;
 
      SetUxThemeAndDWM(result);
-     //Only need for Fix TabControl
-     EnumControlAndSetColors(AWinControl);
   end;
 end;
 
+class function TWin32WSCustomTabControlStyled.CreateHandle(const AWinControl: TWinControl;
+  const AParams: TCreateParams): HWND;
+begin
+  Result := inherited CreateHandle(AWinControl, AParams);
+  if not (csDesigning in AWinControl.ComponentState) then
+  begin
+    TCustomTabControl(AWinControl).Color := CS_FORM_COLOR_DEFAULT ;
+  end;
+end;
 finalization
 RemoveCustomStyle;
 end.
