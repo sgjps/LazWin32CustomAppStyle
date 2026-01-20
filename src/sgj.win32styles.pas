@@ -20,7 +20,7 @@ unit SGJ.Win32Styles;
 interface
 
 uses
-  Windows, UxTheme, Win32Themes;
+  Windows, UxTheme, Win32Themes,dialogs;
 
 type
   TDrawThemeBackground = function(hTheme: THandle; hdc: HDC;
@@ -213,7 +213,6 @@ begin
     raise Exception.Create('Failed to load uxtheme.dll');
 end;
 
-
 function HookGetSysColor(nIndex: integer): DWORD; stdcall;
 begin
   if nIndex = COLOR_HIGHLIGHT then
@@ -225,21 +224,15 @@ begin
   Result := WinGetSysColor(nIndex);
 end;
 
-
-
 function CustomDrawThemeBackground(hTheme: THandle; hdc: HDC;
   iPartId, iStateId: integer; const pRect: TRect;
   pClipRect: pRect): HRESULT; stdcall;
-var
-  LCanvas:TCanvas;
 begin
  CS_DrawThemeBackground(htheme,hdc,iPartId,iStateId,pRect,pClipRect);
   Result := S_OK;
   exit;
   Result :=WinDrawThemeBackground(htheme,hdc,iPartId,iStateId,pRect,pClipRect);
 end;
-
-
 
 function CustomDrawThemeText(hTheme: HTHEME; hdc: HDC; iPartId, iStateId: integer;
   pszText: LPCWSTR; iCharCount: integer; dwTextFlags, dwTextFlags2: DWORD;
@@ -248,14 +241,11 @@ begin
  CS_DrawThemeText(htheme, hdc, iPartId,iStateId,pszText, iCharCount,dwTextFlags, dwTextFlags2, pRect);
 end;
 
-
 procedure InstallCustomStyle;
 var
   hUxTheme: HMODULE;
   pUxTheme,
   ptUxTheme: Pointer;
-  Handler: TMethod;
-
 begin
 
   Win32Theme := TWin32ThemeServices(ThemeServices);
@@ -284,7 +274,6 @@ begin
   WSComCtrls.RegisterCustomListView;
   RegisterWSComponent(TCustomListView, TWin32WSCustomListViewStyled);
 
-
   WSStdCtrls.RegisterCustomListBox;
   RegisterWSComponent(TCustomListBox, TWin32WSCustomListBoxStyled);
 
@@ -308,8 +297,6 @@ begin
 
   WSForms.RegisterCustomForm;
   RegisterWSComponent(TCustomForm, TWin32WSCustomFormStyled);
-
-
 end;
 
 procedure RemoveCustomStyle;
@@ -503,7 +490,7 @@ begin
   begin
     SetWindowTheme(Result, CS_DEFAULT_CLASS, nil);
 
-     if (AWinControl is TToolBar) then
+    if (AWinControl is TToolBar) then
        SetWindowSubclass(Result, @ToolBarWindowProc, ID_SUB_TOOLBAR, 0);
 
     if (AWinControl is TCustomStringGrid) then
@@ -518,6 +505,7 @@ begin
       AWinControl.Color := CS_TREEVIEW_BACKGROUND;
 
     end;
+
     if (AWinControl is TCustomPanel) then
       if TCustomPanel(AWinControl).BorderStyle = bsSingle then begin
         SetWindowSubclass(Result, @CtrlsBoxWindowProc, ID_SUB_SCROLLBOX, 0);
@@ -549,7 +537,6 @@ begin
     if (AWinControl is TCustomCheckListBox) then
       if TCustomCheckListBox(AWinControl).BorderStyle = bsSingle then
         SetWindowSubclass(Result, @CtrlsBoxWindowProc, ID_SUB_SCROLLBOX, 0);
-
   end;
 end;
 
@@ -614,16 +601,13 @@ function ComboBoxWindowProc(Window: HWND; Msg: UINT;
   dwRefData: DWORD_PTR): LRESULT; stdcall;
 var
   DC: HDC;
-  ComboBox: TCustomComboBox;
 begin
   case Msg of
     WM_CTLCOLORLISTBOX:
     begin
-      //ComboBox := TCustomComboBox(GetWin32WindowInfo(Window)^.WinControl);
       DC := HDC(wParam);
       SetBkColor(DC, ColorToRGB(CS_COMBOBOX_BACKGROUND));
       SetTextColor(DC, ColorToRGB(CS_COMBOBOX_TEXT));
-      //Exit(LResult(ComboBox.Brush.Reference.Handle));
       Exit(LResult(CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND))));
     end;
 
@@ -759,6 +743,15 @@ begin
     begin
       TCustomTreeView(ChildControl).Color:=CS_TREEVIEW_BACKGROUND;
     end;
+    if ChildControl is TCustomPanel then
+    begin
+      TCustomPanel(ChildControl).BevelColor:=CTRL_Border;
+    end;
+
+    if ChildControl is TCustomTabControl then
+    begin
+      TCustomTabControl(ChildControl).Color:=CS_FORM_COLOR_DEFAULT;
+    end;
 
     if aControl.Controls[i] is TWinControl then
       EnumControlAndSetColors(TwinControl(aControl.Controls[i]));
@@ -829,7 +822,6 @@ begin
   end;
 end;
 
-
 class function TWin32WSCustomFormStyled.CreateHandle(const AWinControl: TWinControl;
   const AParams: TCreateParams): HWND;
 var
@@ -855,9 +847,10 @@ begin
         SetPreferredAppMode_ForceDark;
 
      SetUxThemeAndDWM(result);
+     //Only need for Fix TabControl
+     EnumControlAndSetColors(AWinControl);
   end;
 end;
-
 
 finalization
 RemoveCustomStyle;
