@@ -1,12 +1,12 @@
 {
  Whats this?
-       Simple Style manager for Win32 apps created with Lazarus
+       Basic Style manager for Win32 apps created with Lazarus
        It's override default Window theme parts and states.
 
  Author: Grzegorz Skulimowski
  Web:    www.hiperapps.com
 
- License: LGPL with linking exception. See COPYING.modifiedLGPL.txt
+ License: LGPL with linking exception.
 
  Some part of this code is delivered from uwin32widgetsetdark.pas from
  Double Commander   https://github.com/doublecmd/doublecmd
@@ -36,6 +36,9 @@ var
   WinDrawThemeBackground: TDrawThemeBackground= nil;
   Win32Theme: TWin32ThemeServices;
 
+const
+    WM_CS_THEMECHANGE = WM_USER + 1;
+
 procedure InstallCustomStyle;
 procedure RemoveCustomStyle;
 
@@ -62,6 +65,7 @@ var
   WinGetSysColor: TGetSysColor= nil;
   WinDrawThemeText: TDrawThemeText= nil;
   CustomFormWndProc: Windows.WNDPROC;
+
 
 const
   CS_DEFAULT_CLASS: PWideChar = 'Explorer';
@@ -375,9 +379,8 @@ var
   cy, cx : integer;
   RV, RH: TRect;
    Style: LongInt;
-  _hTheme: HTHEME;
+   ps: tagPaintStruct;
 begin
-
   if Msg = WM_NOTIFY then
   begin
     NMHdr := PNMHDR(LParam);
@@ -435,6 +438,8 @@ begin
 
     ReleaseDC(Window, DC);
   end;
+
+
 end;
 
 class function TWin32WSCustomListViewStyled.CreateHandle(
@@ -560,7 +565,7 @@ begin
   Result := inherited CreateHandle(AWinControl, P);
 
   if not (csDesigning in AWinControl.ComponentState) then
-  begin
+  begin          //
     SetWindowSubclass(Result, @CtrlsBoxWindowProc, ID_SUB_LISTBOX, 0);
     TCustomListBox(AWinControl).Color := CS_LISTBOX_COLOR;
     TCustomListBox(AWinControl).Font.Color := CS_LISTBOX_FONT;
@@ -614,11 +619,12 @@ begin
   case Msg of
     WM_CTLCOLORLISTBOX:
     begin
-      ComboBox := TCustomComboBox(GetWin32WindowInfo(Window)^.WinControl);
+      //ComboBox := TCustomComboBox(GetWin32WindowInfo(Window)^.WinControl);
       DC := HDC(wParam);
       SetBkColor(DC, ColorToRGB(CS_COMBOBOX_BACKGROUND));
       SetTextColor(DC, ColorToRGB(CS_COMBOBOX_TEXT));
-      Exit(LResult(ComboBox.Brush.Reference.Handle));
+      //Exit(LResult(ComboBox.Brush.Reference.Handle));
+      Exit(LResult(CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND))));
     end;
 
   end;
@@ -633,7 +639,7 @@ var
 begin
   if not (csDesigning in AWinControl.ComponentState) then
   begin
-    AWinControl.Color := CS_COMBOBOX_BACKGROUND;
+    //AWinControl.Color := CS_COMBOBOX_BACKGROUND;
     AWinControl.Font.Color := CS_COMBOBOX_TEXT;
   end;
 
@@ -692,11 +698,79 @@ begin
 end;
 
 { FORM }
+
+
+procedure DisableDWMForWindow(hWnd: HWND);
+var
+  Policy: TDWMNCRENDERINGPOLICY;
+begin
+  Policy := DWMNCRP_DISABLED;
+  DwmSetWindowAttribute(hWnd, DWMWA_NCRENDERING_POLICY, @Policy, SizeOf(Policy));
+end;
+
+procedure SetUxThemeAndDWM(hWnd: HWND);
+var
+  ColorRefBG: TCOLORREF;
+  ColorRefFnt: TCOLORREF;
+  ColorRefBrd: TCOLORREF;
+begin
+  if CS_DarkTitleBar then
+  SetDarkModeForTitleBar(hWnd,true)
+  else
+  begin
+  //Windows 11 only
+  ColorRefBG := ColorToRGB(CS_TitleBar_Color);
+  DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, @ColorRefBG, SizeOf(ColorRefBG));
+  ColorRefFnt := ColorToRGB(CS_TitleBar_Font);
+  DwmSetWindowAttribute(hWnd, DWMWA_TEXT_COLOR, @ColorRefFnt, SizeOf(ColorRefFnt));
+  ColorRefBrd := ColorToRGB(CS_TitleBar_BORDER);
+  if CS_TitleBar_BORDER<>clNone then
+  DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, @ColorRefBrd, SizeOf(ColorRefBrd));
+  end;
+
+  if (Win32BuildNumber>=17763) and (Win32BuildNumber<22000)
+  and not CS_DarkTitleBar and CS_NoDWMForOldOS
+  then
+  DisableDWMForWindow(hWnd);
+
+  if (Win32BuildNumber<17763) and CS_NoDWMForOldOS then
+  DisableDWMForWindow(hWnd);
+end;
+
+procedure EnumControlAndSetColors(const aControl: TWinControl);
+var
+  i: integer;
+  ChildControl: TControl;
+begin
+  for i := 0 to aControl.ControlCount - 1 do
+  begin
+    ChildControl := AControl.Controls[I];
+
+    if ChildControl is TCustomMemo then
+    begin
+      TCustomMemo(ChildControl).Color:=CS_MEMO_COLOR;
+    end;
+    if ChildControl is TCustomListView then
+    begin
+      TCustomListView(ChildControl).Color:=CS_LISTVIEW_BACKGROUND;
+      TCustomListView(ChildControl).Font.Color:=CS_LISTVIEW_TEXT;
+    end;
+    if ChildControl is TCustomTreeView then
+    begin
+      TCustomTreeView(ChildControl).Color:=CS_TREEVIEW_BACKGROUND;
+    end;
+
+    if aControl.Controls[i] is TWinControl then
+      EnumControlAndSetColors(TwinControl(aControl.Controls[i]));
+  end;
+end;
+
 function FormWndProc2(Window: HWnd; Msg: UInt; WParam: Windows.WParam;
   LParam: Windows.LParam): LResult; stdcall;
 var
   DC: HDC;
   R: TRect;
+  Brush: HBRUSH;
 begin
   case Msg of
     WM_NCACTIVATE,
@@ -709,6 +783,41 @@ begin
       FillRect(DC, R, CreateSolidBrush(ColorToRGB(CS_MENU_BACKGROUND2)));
       ReleaseDC(Window, DC);
     end;
+    WM_ERASEBKGND:
+    begin
+      Brush := CreateSolidBrush(ColorToRGB(CS_FORM_COLOR_DEFAULT));
+      GetClientRect(Window, R);
+      Windows.FillRect(HDC(wParam), R, Brush);
+      DeleteObject(Brush);
+      Result := 1;
+      Exit;
+    end;
+    WM_CTLCOLORLISTBOX:
+    begin
+      DC:= HDC(wParam);
+      SetTextColor( DC, ColorToRGB(CS_LISTBOX_FONT));
+      SetBKColor(DC, ColorToRGB(CS_LISTBOX_COLOR));
+      result:=CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+      exit;
+    end;
+    WM_CTLCOLOREDIT :
+    begin
+      DC:= HDC(wParam);
+      SetTextColor( DC, ColorToRGB(CS_MEMO_TEXT));
+      SetBKColor(DC, ColorToRGB(CS_MEMO_COLOR));
+      result:=CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
+      exit;
+    end;
+    WM_CS_THEMECHANGE:
+    begin
+        SetUxThemeAndDWM(Window);
+        EnumControlAndSetColors(TForm(FindControl(Window)));
+
+        TForm(FindControl(Window)).Hide;
+        TForm(FindControl(Window)).Show;
+        Result := 1;
+        Exit;
+    end;
     WM_SHOWWINDOW:
     begin
       Result := CallWindowProc(CustomFormWndProc, Window, Msg, wParam, lParam);
@@ -719,20 +828,13 @@ begin
     end;
   end;
 end;
-procedure DisableDWMForWindow(hWnd: HWND);
-var
-  Policy: TDWMNCRENDERINGPOLICY;
-begin
-  Policy := DWMNCRP_DISABLED;
-  DwmSetWindowAttribute(hWnd, DWMWA_NCRENDERING_POLICY, @Policy, SizeOf(Policy));
-end;
+
+
 class function TWin32WSCustomFormStyled.CreateHandle(const AWinControl: TWinControl;
   const AParams: TCreateParams): HWND;
 var
   Info: PWin32WindowInfo;
-  ColorRefBG: TCOLORREF;
-  ColorRefFnt: TCOLORREF;
-  ColorRefBrd: TCOLORREF;
+
 begin
   Result := inherited CreateHandle(AWinControl, AParams);
 
@@ -745,41 +847,18 @@ begin
 
   if not (csDesigning in AWinControl.ComponentState) then
   begin
-     AWinControl.Color:= CS_FORM_COLOR_DEFAULT;
+     //AWinControl.Color:= CS_FORM_COLOR_DEFAULT;
      AWinControl.Font.Color:= CS_FORM_FONT_DEFAULT;
      if TCustomForm(AWinControl).Menu<>nil then
      SetMenuBackground(TCustomForm(AWinControl).Menu.Handle);
      if (CS_ForceDark) and (Win32BuildNumber>=17763) then
         SetPreferredAppMode_ForceDark;
 
-     if CS_DarkTitleBar then
-     SetDarkModeForTitleBar(result,true)
-     else
-     begin
-     //Windows 11 only
-     ColorRefBG := ColorToRGB(CS_TitleBar_Color);
-     DwmSetWindowAttribute(result, DWMWA_CAPTION_COLOR, @ColorRefBG, SizeOf(ColorRefBG));
-     ColorRefFnt := ColorToRGB(CS_TitleBar_Font);
-     DwmSetWindowAttribute(result, DWMWA_TEXT_COLOR, @ColorRefFnt, SizeOf(ColorRefFnt));
-     ColorRefBrd := ColorToRGB(CS_TitleBar_BORDER);
-     if CS_TitleBar_BORDER<>clNone then
-     DwmSetWindowAttribute(result, DWMWA_BORDER_COLOR, @ColorRefBrd, SizeOf(ColorRefBrd));
-     end;
-
-     if (Win32BuildNumber>=17763) and (Win32BuildNumber<22000)
-     and not CS_DarkTitleBar and CS_NoDWMForOldOS
-     then
-     DisableDWMForWindow(result);
-
-     if (Win32BuildNumber<17763) and CS_NoDWMForOldOS then
-     DisableDWMForWindow(result);
+     SetUxThemeAndDWM(result);
   end;
 end;
-
 
 
 finalization
 RemoveCustomStyle;
 end.
-
-
