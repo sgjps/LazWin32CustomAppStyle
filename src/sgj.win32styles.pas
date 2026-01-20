@@ -755,6 +755,7 @@ begin
     if ChildControl is TCustomPanel then
     begin
       TCustomPanel(ChildControl).BevelColor:=CTRL_Border;
+      TCustomPanel(ChildControl).Font.Color:=CS_FORM_FONT_DEFAULT;
     end;
 
     if ChildControl is TCustomTabControl then
@@ -871,3 +872,4 @@ end;
 finalization
 RemoveCustomStyle;
 end.
+
