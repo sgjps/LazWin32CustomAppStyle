@@ -44,7 +44,11 @@ Add after Application.Initialize; and before Application.CreateForm(...) :
 SGJ.Win32Styles.Themes.Dark.CS_SetCustomColors; // example theme
 PostMessage(self.Handle, WM_CS_THEMECHANGE, 0, 0);  // form handle, WM_CS_THEMECHANGE is declared in SGJ.Win32Styles
 ```
-
+## Load default OS Theme
+```
+SGJ.Win32Styles.Themes.CS_Enable:=false;
+PostMessage(self.Handle, WM_CS_THEMECHANGE, 0, 0); 
+```
 ![Image1](/Images/WinAll.webp)
 
 # Donate 
