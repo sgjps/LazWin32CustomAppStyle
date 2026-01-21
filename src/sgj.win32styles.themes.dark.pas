@@ -21,6 +21,7 @@ implementation
 
 procedure CS_SetColors;
 begin
+   CS_ENABLE:=true;  //enable theme
   //Win10 17763+
    CS_DarkTitleBar:=false; //Enable native Windows Dark Mode Title bar
    CS_ForceDark:=true;     //Enable native dark context menu for edit, memo...
@@ -284,5 +285,6 @@ begin
 end;
 
 end.
+
 
 
