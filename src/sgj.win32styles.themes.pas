@@ -28,6 +28,7 @@ uses
   BGRABitmapTypes;
 
 var
+  CS_Enable: boolean = false;   // Enable or disable custom theme
   ////Win10 17763+
   CS_DarkTitleBar: boolean = False;
   CS_ForceDark: boolean = False;
@@ -1853,5 +1854,6 @@ begin
 end;
 
 end.
+
 
 
