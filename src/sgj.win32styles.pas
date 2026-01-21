@@ -223,13 +223,32 @@ end;
 
 function HookGetSysColor(nIndex: integer): DWORD; stdcall;
 begin
-  if CS_Enable then
+  if CS_Enable then begin
     if nIndex = COLOR_HIGHLIGHT then
     begin
       Result := (CS_HIGHLIGHT);
       Exit;
     end;
 
+  if Win32MajorVersion=5 then  begin
+  if nIndex = COLOR_MENUBAR then
+  begin
+    Result := CS_MENU_BACKGROUND;
+    Exit;
+  end;
+  if nIndex = COLOR_MENU then
+  begin
+    Result := CS_POPUPMENU_BACKGROUND;
+    Exit;
+  end;
+  if nIndex = COLOR_MENUTEXT then
+  begin
+    Result := CS_MENU_FONT;
+    Exit;
+  end;
+  end;
+
+  end;
   Result := WinGetSysColor(nIndex);
 end;
 
@@ -786,10 +805,21 @@ begin
     ChildControl := AControl.Controls[I];
 
     if ChildControl is TCustomComboBox then
-      if CS_Enable then
-        TCustomComboBox(ChildControl).Font.Color := CS_COMBOBOX_TEXT
-      else
+      if CS_Enable then begin
+        TCustomComboBox(ChildControl).Font.Color := CS_COMBOBOX_TEXT ;
+        TCustomComboBox(ChildControl).Color := CS_COMBOBOX_BACKGROUND;
+      end
+      else begin
         TCustomComboBox(ChildControl).Font.Color := clDefault;
+        TCustomComboBox(ChildControl).Color := clWindow;
+      end;
+
+    if Win32MajorVersion=5 then
+    if ChildControl is TCustomCheckBox then
+        if CS_Enable then
+        TCustomCheckBox(ChildControl).Color := CS_BUTTON_CHECKBOX_Color
+        else
+        TCustomCheckBox(ChildControl).Color := clDefault;
 
     if ChildControl is TCustomMemo then
     begin
@@ -813,10 +843,18 @@ begin
     end;
     if ChildControl is TCustomTreeView then
     begin
-      if CS_Enable then
-        TCustomTreeView(ChildControl).Color := CS_TREEVIEW_BACKGROUND
-      else
+      if CS_Enable then begin
+        TCustomTreeView(ChildControl).Color := CS_TREEVIEW_BACKGROUND;
+        TCustomTreeView(ChildControl).Font.Color := CS_TREEVIEW_FONT;
+        if Win32MajorVersion=5 then
+        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options-[tvoThemedDraw]
+        else
+        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options+[tvoThemedDraw]
+      end
+      else  begin
         TCustomTreeView(ChildControl).Color := clWindow;
+        TCustomTreeView(ChildControl).Font.Color := clDefault;
+      end;
     end;
     if ChildControl is TCustomPanel then
     begin
@@ -902,6 +940,7 @@ begin
     end;
     WM_CS_THEMECHANGE:
     begin
+      if Win32MajorVersion>5 then
       SetUxThemeAndDWM(Window);
       EnumControlAndSetColors(TCustomForm(FindControl(Window)));
 
@@ -948,6 +987,7 @@ begin
     if (CS_ForceDark) and (Win32BuildNumber >= 17763) then
       SetPreferredAppMode_ForceDark;
 
+    if Win32MajorVersion>5 then
     SetUxThemeAndDWM(Result);
   end;
 end;
