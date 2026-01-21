@@ -68,6 +68,9 @@ begin
 
 
    //BP_CHECKBOX
+   //BP_CHECKBOX
+    if Win32MajorVersion=5 then
+    CS_BUTTON_CHECKBOX_Color:= CS_FORM_COLOR_DEFAULT;    //For XP compatibility, text background
     CS_BUTTON_CHECKBOX_Font:= clWhite;             // Font color
     CS_BUTTON_CHECKBOX_DISABLED_FONT:= clGray;     // --||--    Disabled
     CS_BUTTON_CHECKBOX:= clWhite;                  // Inner Color
@@ -285,6 +288,7 @@ begin
 end;
 
 end.
+
 
 
 
