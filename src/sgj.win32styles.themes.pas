@@ -1,12 +1,12 @@
 {
 Whats this?
-      Simple Style manager for Win32 apps created with Lazarus
+      Basic Style manager for Win32 apps created with Lazarus
       It's override default Window theme parts and states.
 
       Author: Grzegorz Skulimowski
       Web:    www.hiperapps.com
 
-      License: LGPL with linking exception. See COPYING.modifiedLGPL.txt
+      License: LGPL with linking exception.
 
 
 
@@ -28,7 +28,8 @@ uses
   BGRABitmapTypes;
 
 var
-  CS_Enable: boolean = false;   // Enable or disable custom theme
+
+  CS_Enable: boolean = false;
   ////Win10 17763+
   CS_DarkTitleBar: boolean = False;
   CS_ForceDark: boolean = False;
@@ -67,6 +68,7 @@ var
   CS_BUTTON_PUSHBUTTON_Font: TColor = clBlack;                //Font Normal
   CS_BUTTON_PUSHBUTTON_Font_DISABLED: TColor = clGray;        //Font Disabled
   //BP_CHECKBOX
+  CS_BUTTON_CHECKBOX_Color: TColor = clForm;          //For XP compatibility
   CS_BUTTON_CHECKBOX_Font: TColor = clBlack;             // Font color
   CS_BUTTON_CHECKBOX_DISABLED_FONT: TColor = clGray;     // --||--    Disabled
   CS_BUTTON_CHECKBOX: TColor = clWhite;                  // Inner Color
@@ -141,7 +143,7 @@ var
 
   //ListBox
   CS_LISTBOX: TColor = $E2E2E2;  //Combobox frame
-  CS_LISTBOX_COLOR: TColor = clWindow;
+  CS_LISTBOX_COLOR: TColor = clred;
   CS_LISTBOX_FONT: TColor = clBlack;
 
   //ListView
@@ -1044,6 +1046,12 @@ begin
     LCanvas.Handle := HDC;
 
     case iPartId of
+      TABP_BODY:begin
+        LCanvas.Pen.Color := CS_TAB_PANE_BORDER;
+        LCanvas.Brush.color := CS_TAB_PANE_BACKGROUND;
+        LCanvas.FillRect(prect);
+        LCanvas.Rectangle(prect);
+      end;
       TABP_PANE: begin
         LCanvas.Pen.Color := CS_TAB_PANE_BORDER;
         LCanvas.Brush.color := CS_TAB_PANE_BACKGROUND;
@@ -1436,6 +1444,9 @@ begin
   LCanvas := TCanvas.Create;
   LCanvas.Handle := hdc;
 
+  if Win32MajorVersion=5  then
+   Result := WinDrawThemeBackground(hTheme, hdc, iPartId, iStateId, pRect, pClipRect)
+  else
   case iPartId of
     WP_FRAMELEFT, WP_FRAMERIGHT, WP_FRAMEBOTTOM,
     WP_SMALLFRAMELEFT, WP_SMALLFRAMERIGHT, WP_SMALLFRAMEBOTTOM: begin
@@ -1477,10 +1488,11 @@ begin
       end;
     end;
     WP_MINBUTTON: begin
-      if iStateId = MINBS_NORMAL then
-      begin
-        LCANVAS.Brush.Color := CS_TitleBar_BORDER;
-        LCanvas.FillRect(prect);
+      case iStateId of
+         MINBS_NORMAL: LCANVAS.Brush.Color := CS_TitleBar_BORDER;
+         MINBS_HOT:    LCANVAS.Brush.Color := clRed;
+      end;
+      LCanvas.FillRect(prect);
         AStyle := LCanvas.TextStyle;
         AStyle.Alignment := taCenter;
         AStyle.Layout := tlCenter;
@@ -1489,7 +1501,6 @@ begin
         LCanvas.Font.Name := 'Segoe MDL2 Assets';
         LCanvas.TextRect(pRect, pRect.TopLeft.X, pRect.TopLeft.Y,
           MDL_BUTTON_MIN, AStyle);
-      end;
     end;
     WP_MAXBUTTON: begin
       if iStateId = MAXBS_NORMAL then
@@ -1854,6 +1865,3 @@ begin
 end;
 
 end.
-
-
-
