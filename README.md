@@ -24,6 +24,7 @@ It's usefull for create custom Dark Mode or another theme for app.
 * Windows 8.x
 * Windows 7
 * Windows Vista
+* Windows XP / Server 2003
 
 > [!WARNING]
 > It works now, but there is no guarantee it will work in the future. 
