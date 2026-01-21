@@ -786,7 +786,9 @@ begin
     ChildControl := AControl.Controls[I];
 
     if ChildControl is TCustomComboBox then
-      if not CS_Enable then
+      if CS_Enable then
+        TCustomComboBox(ChildControl).Font.Color := CS_COMBOBOX_TEXT
+      else
         TCustomComboBox(ChildControl).Font.Color := clDefault;
 
     if ChildControl is TCustomMemo then
