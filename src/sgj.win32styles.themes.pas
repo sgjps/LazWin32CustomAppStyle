@@ -307,6 +307,21 @@ const
   MDL_SCROLLBOX_BTNRIGHT = #$EE#$B7#$9A; // $E00F
   MDL_SCROLLBOX_BTNUP = #$EE#$B7#$9B; // $E010
   MDL_SCROLLBOX_BTNDOWN = #$EE#$B7#$9C; // $E011
+function GetThemeName():string;
+var
+  ThemeFile, ColorScheme, SizeName, DisplayName: array[0..MAX_PATH] of WideChar;
+begin
+  GetCurrentThemeName(
+        ThemeFile, Length(ThemeFile),
+        ColorScheme, Length(ColorScheme),
+        SizeName, Length(SizeName)
+      );
+  GetThemeDocumentationProperty(
+        ThemeFile, 'DisplayName', DisplayName, Length(DisplayName)
+      );
+
+  result:= DisplayName;
+end;
 
 function Button_DrawThemeBackground(hTheme: THandle; hdc: HDC;
   iPartId, iStateId: integer; const pRect: TRect; pClipRect: pRect): HRESULT;
@@ -349,6 +364,13 @@ begin
       LCanvas.Brush.Color := CS_BUTTON_PUSHBUTTON_NORMAL;
       LCanvas.Pen.Color := CS_BUTTON_PUSHBUTTON_FRAME_NORMAL;
     end;
+    if (GetThemeName='Zune Style     ') or
+    (GetthemeName='Embedded Style ') then
+    begin
+      LCanvas.FillRect(Prect);
+      LCanvas.Rectangle(PRect);
+    end
+    else begin
     b := TBGRABitmap.Create(pRect.Width, pRect.Height);
     b.FillRoundRectAntialias(pRect.left, pRect.Top, pRect.Width -
       1, prect.Height - 1, 4, 4, LCanvas.Brush.Color, [], True);
@@ -356,6 +378,7 @@ begin
       prect.Height - 1, 4, 4, LCanvas.Pen.Color, 1, []);
     b.draw(LCanvas, 0, 0, False);
     b.Free;
+    end;
   finally
     LCanvas.Handle := 0;
     LCanvas.Free;
@@ -633,6 +656,14 @@ begin
       LCanvas.Font.Size := 6;
       BtnSym := MDL_COMBOBOX_BTNDOWN;
 
+      if Win32MajorVersion=5 then begin
+      if iStateId in [CBXS_Normal] then
+      begin
+        LCanvas.Font.Color := clWhite;
+        LCanvas.Brush.Color := CS_COMBOBOX_Normal;
+        LCanvas.FillRect(prect);
+      end;
+      end;
       if iStateId in [CBXS_DISABLED] then
       begin
         LCanvas.Font.Color := CS_COMBOBOX_DROPDOWNBUTTON_DISABLED_FONT;
@@ -1767,6 +1798,12 @@ function CS_DrawThemeText(hTheme: HTHEME; hdc: HDC; iPartId, iStateId: integer;
   pszText: LPCWSTR; iCharCount: integer; dwTextFlags, dwTextFlags2: DWORD;
   const pRect: TRect): HRESULT;
 begin
+
+  SetBkMode(hdc, TRANSPARENT);
+  SetTextColor(hdc, ColorToRGB(CS_FORM_FONT_DEFAULT));
+  DrawTextExW(hdc, pszText, iCharCount, @pRect, dwTextFlags, nil);
+  Result := S_OK;
+
   if (hTheme = Win32Theme.Theme[teButton]) then
   begin
     Button_DrawThemeText(htheme, hdc, iPartId, iStateId, pszText,
@@ -1776,11 +1813,15 @@ begin
   end;
   if (hTheme = Win32Theme.Theme[teTreeview]) then
   begin
+    if ipartid=TVP_TREEITEM then
+    begin
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, COLORTORGB(CS_TREEVIEW_FONT));
+    SetTextColor(hdc, COLORTORGB(clred));
     DrawTextExW(hdc, pszText, iCharCount, @pRect, dwTextFlags, nil);
     Result := S_OK;
     Exit;
+
+    end;
   end;
 
   if (hTheme = Win32Theme.Theme[teTab]) then
@@ -1857,10 +1898,7 @@ begin
     exit;
   end;
 
-  SetBkMode(hdc, TRANSPARENT);
-  SetTextColor(hdc, ColorToRGB(CS_FORM_FONT_DEFAULT));
-  DrawTextExW(hdc, pszText, iCharCount, @pRect, dwTextFlags, nil);
-  Result := S_OK;
+
 
 end;
 
