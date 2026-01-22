@@ -924,13 +924,17 @@ begin
     end;
     WM_CTLCOLORLISTBOX:
     begin
-      if not Cs_Enable then exit;
+      if Cs_Enable then
+      begin
       DC := HDC(wParam);
       SetTextColor(DC, ColorToRGB(CS_LISTBOX_FONT));
       SetBKColor(DC, ColorToRGB(CS_LISTBOX_COLOR));
       Result := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
       exit;
-    end;
+       end
+      else
+        Result := CallWindowProc(CustomFormWndProc, Window, Msg, wParam, lParam);
+    end;  
     WM_CTLCOLOREDIT:
     begin
       if CS_Enable then
@@ -946,6 +950,7 @@ begin
     end;
     WM_CS_THEMECHANGE:
     begin
+      if not UxTheme.UseThemes then CS_Enable:=false;
       if Win32MajorVersion>5 then
       SetUxThemeAndDWM(Window);
       EnumControlAndSetColors(TCustomForm(FindControl(Window)));
@@ -1012,4 +1017,5 @@ end;
 finalization
   RemoveCustomStyle;
 end.
+
 
