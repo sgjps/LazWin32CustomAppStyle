@@ -846,16 +846,22 @@ begin
       if CS_Enable then begin
         TCustomTreeView(ChildControl).Color := CS_TREEVIEW_BACKGROUND;
         TCustomTreeView(ChildControl).Font.Color := CS_TREEVIEW_FONT;
-        if Win32MajorVersion=5 then
-        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options-[tvoThemedDraw]
+        if Win32MajorVersion=5 then begin
+        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options-[tvoThemedDraw];
+        TCustomTreeView(ChildControl).SelectionColor:=CS_HIGHLIGHT;
+        end
         else
-        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options+[tvoThemedDraw]
+        begin
+        TCustomTreeView(ChildControl).Options:=TCustomTreeView(ChildControl).Options+[tvoThemedDraw];
+        TCustomTreeView(ChildControl).SelectionColor:=clHighlight;
+        end;
       end
       else  begin
         TCustomTreeView(ChildControl).Color := clWindow;
         TCustomTreeView(ChildControl).Font.Color := clDefault;
+        TCustomTreeView(ChildControl).SelectionColor:=clHighlight;
       end;
-    end;
+    end; 
     if ChildControl is TCustomPanel then
     begin
       if CS_Enable then
@@ -1006,3 +1012,4 @@ end;
 finalization
   RemoveCustomStyle;
 end.
+
