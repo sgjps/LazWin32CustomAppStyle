@@ -1816,7 +1816,7 @@ begin
     if ipartid=TVP_TREEITEM then
     begin
     SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, COLORTORGB(clred));
+    SetTextColor(hdc, COLORTORGB(CS_TREEVIEW_FONT));
     DrawTextExW(hdc, pszText, iCharCount, @pRect, dwTextFlags, nil);
     Result := S_OK;
     Exit;
@@ -1903,3 +1903,4 @@ begin
 end;
 
 end.
+
