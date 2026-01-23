@@ -20,7 +20,7 @@ unit SGJ.Win32Styles;
 interface
 
 uses
-  Windows, UxTheme, Win32Themes, Dialogs;
+  Windows, UxTheme, Win32Themes, Dialogs, LCLType, ComCtrls;
 
 type
   TDrawThemeBackground = function(hTheme: THandle; hdc: HDC;
@@ -32,9 +32,20 @@ type
     pszText: LPCWSTR; iCharCount: integer; dwTextFlags, dwTextFlags2: DWORD;
     const pRect: TRect): HRESULT; stdcall;
 
+  TPageControl = class(ComCtrls.TPageControl)
+  private
+    procedure CNDrawItem(var Message: TWMDrawItem); message WM_DRAWITEM;
+    procedure TCMAdjustRect(var Msg: TMessage); message TCM_ADJUSTRECT;
+  protected
+    procedure CreateParams(var Params: TCreateParams); override;
+    procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
+  end;
+
 var
   WinDrawThemeBackground: TDrawThemeBackground = nil;
   Win32Theme: TWin32ThemeServices;
+
+
 
 const
   WM_CS_THEMECHANGE = WM_USER + 1;
@@ -53,8 +64,8 @@ uses
   ATSynEdit
   {$EndIF}
   dwmapi, Themes, Win32Proc, Win32Int, Win32Extra, DDetours,
-  Classes, SysUtils, StdCtrls, ExtCtrls, CommCtrl, Controls, ComCtrls, Forms, Menus,
-  LCLType, fpimage, Grids, CheckLst, Graphics, bgrabitmap,
+  Classes, SysUtils, StdCtrls, ExtCtrls, CommCtrl, Controls, Forms, Menus,
+  fpimage, Grids, CheckLst, Graphics, bgrabitmap,
   Win32WSComCtrls, Win32WSControls, WSComCtrls, WSLCLClasses, Win32WSForms, WSForms,
   Win32WSStdCtrls, WSStdCtrls, WSMenus, Win32WSMenus;
 
@@ -861,7 +872,7 @@ begin
         TCustomTreeView(ChildControl).Font.Color := clDefault;
         TCustomTreeView(ChildControl).SelectionColor:=clHighlight;
       end;
-    end; 
+    end;
     if ChildControl is TCustomPanel then
     begin
       if CS_Enable then
@@ -934,7 +945,7 @@ begin
        end
       else
         Result := CallWindowProc(CustomFormWndProc, Window, Msg, wParam, lParam);
-    end;  
+    end;
     WM_CTLCOLOREDIT:
     begin
       if CS_Enable then
@@ -1014,8 +1025,131 @@ begin
   end;
 end;
 
+procedure TPageControl.CNDrawItem(var Message: TWMDrawItem);
+var
+  FontHandle: HFONT;
+  FontColor: COLORREF;
+  FontObject: TLogFont;
+  BrushColor: COLORREF;
+  PenColor:COLORREF;
+  Rgn: HRGN;
+  Rect:TRect;
+begin
+
+  with Message.DrawItemStruct^ do
+  begin
+    GetObject(Font.Handle, SizeOf(FontObject), @FontObject);
+
+    if itemState=ODS_SELECTED then begin
+      PenColor:= CS_TAB_ITEM_HOT_FRAME;
+      BrushColor := ColorToRGB(CS_TAB_ITEM_SELECTED_BACKGROUND);
+      end
+      else begin
+      BrushColor := ColorToRGB(CS_TAB_ITEM_NORMAL_BACKGROUND);
+      PenColor:= CS_TAB_ITEM_NORMAL_FRAME;
+      end;
+
+      FontColor := ColorToRGB(CS_TAB_FONT);
+      FontObject.lfWeight := FW_NORMAL;
+      FontObject.lfItalic := 0;
+      FontObject.lfEscapement:=900;
+
+   SetDCBrushColor(Message.DrawItemStruct^.hDC, BrushColor);
+   SetDCPenColor(Message.DrawItemStruct^.hDC, PenColor);
+
+   SelectClipRgn(Message.DrawItemStruct^.hDC, 0);
+
+   Rect := Message.DrawItemStruct^.rcItem;
+   if Bool(Message.DrawItemStruct^.itemState and ODS_SELECTED) then begin
+     Inc(Rect.Left, 2);
+ //    Inc(Rect.Top, 1);
+     Dec(Rect.Right, 2);
+     Dec(Rect.Bottom, 3);
+   end else begin
+     Dec(Rect.Left, 2);
+     Dec(Rect.Top, 2);
+     Inc(Rect.Right, 2);
+     Inc(Rect.Bottom);
+   end;
+   FillRect(Message.DrawItemStruct^.hDC, Rect,
+       GetStockObject(DC_BRUSH));
+   FrameRect(Message.DrawItemStruct^.hDC, Rect,
+       GetStockObject(DC_Pen));
+
+
+    FontHandle := CreateFontIndirect(FontObject);
+    try
+      SelectObject(hDC, FontHandle);
+      SetTextColor(hDC, FontColor);
+      SetBkMode(hDC, TRANSPARENT);
+      DrawTextEx(hDC, PChar(Page[itemID].Caption), -1, rcItem, DT_LEFT or
+        DT_BOTTOM or DT_SINGLELINE, nil);
+    finally
+      DeleteObject(FontHandle);
+    end;
+
+    Rgn := CreateRectRgn(0, 0, 0, 0);
+    SelectClipRgn(hDC, Rgn);
+    DeleteObject(Rgn);
+
+  end;
+  Message.Result := 1;
+end;
+
+procedure TPageControl.WMPaint(var Message: TWMPaint);
+var
+  Canvas: TCanvas;
+  R: TRect;
+begin
+    inherited;
+    Canvas := TCanvas.Create;
+    try
+      Canvas.Handle := Message.DC;
+      if Canvas.Handle = 0 then
+        Canvas.Handle := GetDC(Handle);
+      try
+        R := ClientRect;
+        Canvas.Brush.Color := CS_TAB_PANE_BACKGROUND;
+        Canvas.Pen.Color:=CS_TAB_PANE_BORDER;
+        Canvas.FillRect(R);
+        Canvas.Rectangle(R);
+      finally
+        if Message.DC = 0 then
+          ReleaseDC(Handle, Canvas.Handle);
+      end;
+    finally
+      Canvas.Free;
+    end;
+end;
+
+procedure TPageControl.TCMAdjustRect(var Msg: TMessage);
+begin
+  if (self.TabPosition=tpLeft) or (Self.TabPosition=tpRight) then
+  begin
+  if self.TabPosition=tpleft then
+  PRect(Msg.LParam)^.Width:= PRect(Msg.LParam)^.Width + 4;
+  if self.TabPosition=tpRight then
+  PRect(Msg.LParam)^.Left:= PRect(Msg.LParam)^.Left -4;
+  PRect(Msg.LParam)^.Top:= PRect(Msg.LParam)^.Top - 4;
+  PRect(Msg.LParam)^.Height:= PRect(Msg.LParam)^.Height + 4;
+  end;
+  inherited
+end;
+
+procedure TPageControl.CreateParams(var Params: TCreateParams);
+begin
+  inherited CreateParams(Params);
+  with Params do
+  begin
+    if not (csDesigning in ComponentState) then
+      if (self.TabPosition=tpLeft) or (Self.TabPosition=tpRight) then
+      Style := Style or TCS_OWNERDRAWFIXED
+      Else
+      Style := Style;
+  end;
+end;
+
 finalization
   RemoveCustomStyle;
 end.
-
 
