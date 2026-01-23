@@ -1052,7 +1052,10 @@ begin
       FontColor := ColorToRGB(CS_TAB_FONT);
       FontObject.lfWeight := FW_NORMAL;
       FontObject.lfItalic := 0;
+
+
       FontObject.lfEscapement:=900;
+      FontObject.lfOrientation:=900;
 
    SetDCBrushColor(Message.DrawItemStruct^.hDC, BrushColor);
    SetDCPenColor(Message.DrawItemStruct^.hDC, PenColor);
@@ -1060,16 +1063,29 @@ begin
    SelectClipRgn(Message.DrawItemStruct^.hDC, 0);
 
    Rect := Message.DrawItemStruct^.rcItem;
+   if self.TabPosition=tpleft then
    if Bool(Message.DrawItemStruct^.itemState and ODS_SELECTED) then begin
      Inc(Rect.Left, 2);
- //    Inc(Rect.Top, 1);
-     Dec(Rect.Right, 2);
-     Dec(Rect.Bottom, 3);
+     //    Inc(Rect.Top, 1);
+     Inc(Rect.Right, 4);
+     Dec(Rect.Bottom, 1);
    end else begin
-     Dec(Rect.Left, 2);
-     Dec(Rect.Top, 2);
-     Inc(Rect.Right, 2);
-     Inc(Rect.Bottom);
+     inc(Rect.Left, 2);
+     dec(Rect.Top, 4);
+     Inc(Rect.Right, 4);//2
+     Inc(Rect.Bottom,4);
+   end;
+   if self.TabPosition=tpRight then
+   if Bool(Message.DrawItemStruct^.itemState and ODS_SELECTED) then begin
+     Dec(Rect.Left, 4);
+     //    Inc(Rect.Top, 1);
+     Dec(Rect.Right, 2);
+     Dec(Rect.Bottom, 1);
+   end else begin
+     Dec(Rect.Left, 4);
+     dec(Rect.Top, 4);
+     Dec(Rect.Right, 2);
+     Inc(Rect.Bottom,4);
    end;
    FillRect(Message.DrawItemStruct^.hDC, Rect,
        GetStockObject(DC_BRUSH));
