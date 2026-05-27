@@ -907,7 +907,6 @@ var
   R: TRect;
   Brush: HBRUSH;
     Info: PWin32WindowInfo;
-  Form: TCustomForm;
 begin
   case Msg of
     WM_NCACTIVATE,
@@ -951,7 +950,7 @@ begin
       DC := HDC(wParam);
       SetTextColor(DC, ColorToRGB(CS_LISTBOX_FONT));
       SetBKColor(DC, ColorToRGB(CS_LISTBOX_COLOR));
-      Result := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+      Result := BrushListBox;
       exit;
        end
       else
@@ -964,7 +963,7 @@ begin
         DC := HDC(wParam);
         SetTextColor(DC, ColorToRGB(CS_MEMO_TEXT));
         SetBKColor(DC, ColorToRGB(CS_MEMO_COLOR));
-        Result := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
+        Result := BrushMemo;
         exit;
       end
       else
@@ -978,6 +977,8 @@ begin
 
       DeleteObject(BrushListBox);
       BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+      DeleteObject(BrushMemo);
+      BrushMemo := CreateSolidBrush(ColorToRGB(CS_Memo_COLOR));
 
       if assigned(TCustomForm(FindControl(Window))) then
       begin
@@ -1182,7 +1183,13 @@ begin
   end;
 end;
 
+initialization
+BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
+
 finalization
   RemoveCustomStyle;
+  DeleteObject(BrushListBox);
+  DeleteObject(BrushMemo); 
 end.
 
