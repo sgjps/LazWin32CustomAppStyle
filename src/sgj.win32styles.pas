@@ -906,6 +906,8 @@ var
   DC: HDC;
   R: TRect;
   Brush: HBRUSH;
+    Info: PWin32WindowInfo;
+  Form: TCustomForm;
 begin
   case Msg of
     WM_NCACTIVATE,
@@ -913,11 +915,19 @@ begin
     begin
       Result := CallWindowProc(CustomFormWndProc, Window, Msg, wParam, lParam);
 
-      DC := GetWindowDC(Window);
-      R := GetNonclientMenuBorderRect(Window);
       if CS_Enable then
-        FillRect(DC, R, CreateSolidBrush(ColorToRGB(CS_MENU_BACKGROUND2)));
-      ReleaseDC(Window, DC);
+      begin
+        DC := GetWindowDC(Window);
+        SaveDC(DC);
+
+        R := GetNonclientMenuBorderRect(Window);
+        Brush := CreateSolidBrush(ColorToRGB(CS_MENU_BACKGROUND2));
+        FillRect(DC, R, Brush);
+        DeleteObject(Brush);
+
+        RestoreDC(DC, -1);
+        ReleaseDC(Window, DC);
+      end;
     end;
     WM_ERASEBKGND:
     begin
@@ -926,6 +936,7 @@ begin
         Brush := CreateSolidBrush(ColorToRGB(CS_FORM_COLOR_DEFAULT));
         GetClientRect(Window, R);
         Windows.FillRect(HDC(wParam), R, Brush);
+        DeleteObject(Brush);
         DeleteObject(Brush);
         Result := 1;
         Exit;
@@ -964,13 +975,18 @@ begin
       if not UxTheme.UseThemes then CS_Enable:=false;
       if Win32MajorVersion>5 then
       SetUxThemeAndDWM(Window);
+
+      DeleteObject(BrushListBox);
+      BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+
+      if assigned(TCustomForm(FindControl(Window))) then
+      begin
       EnumControlAndSetColors(TCustomForm(FindControl(Window)));
 
       if TCustomForm(FindControl(Window)).Menu <> nil then
         SetMenuBackground(TCustomForm(FindControl(Window)).Menu.Handle);
-
-      TCustomForm(FindControl(Window)).Hide;
-      TCustomForm(FindControl(Window)).Show;
+      end;
+      RedrawWindow(Window, nil, 0, RDW_INVALIDATE or RDW_FRAME or RDW_ALLCHILDREN);
       Result := 1;
       Exit;
     end;
@@ -982,8 +998,9 @@ begin
     begin
       Result := CallWindowProc(CustomFormWndProc, Window, Msg, wParam, lParam);
     end;
+
   end;
-end;
+end;     
 
 class function TWin32WSCustomFormStyled.CreateHandle(const AWinControl: TWinControl;
   const AParams: TCreateParams): HWND;
