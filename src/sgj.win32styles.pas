@@ -67,16 +67,24 @@ uses
   Classes, SysUtils, StdCtrls, ExtCtrls, CommCtrl, Controls, Forms, Menus,
   fpimage, Grids, CheckLst, Graphics, bgrabitmap,
   Win32WSComCtrls, Win32WSControls, WSComCtrls, WSLCLClasses, Win32WSForms, WSForms,
-  Win32WSStdCtrls, WSStdCtrls, WSMenus, Win32WSMenus;
+  Win32WSStdCtrls, WSStdCtrls, WSMenus, Win32WSMenus,InterfaceBase;
 
 type
   TGetSysColor = function(nIndex: integer): DWORD; stdcall;
-
+  TGetSysColorBrush = function(nIndex: integer): HBrush; stdcall;
+type
+  TAllowDarkModeForWindow = function(hWnd: HWND; bAllow: BOOL): BOOL; stdcall;
 var
   WinGetSysColor: TGetSysColor = nil;
+  WinGetSysColorBrush: TGetSysColorBrush = nil;
   WinDrawThemeText: TDrawThemeText = nil;
   CustomFormWndProc: Windows.WNDPROC;
 
+
+var
+  BrushListBox: HBRUSH;
+  BrushMemo: HBRUSH;
+  BrushComboBox: HBRUSH;
 
 const
   CS_DEFAULT_CLASS: pwidechar = 'Explorer';
@@ -182,6 +190,7 @@ const
   DWMWA_CAPTION_COLOR = 35; // Title bar background color
   DWMWA_TEXT_COLOR = 36; // Title bar text color
 
+
 function SetDarkModeForTitleBar(hWnd: HWND; DarkMode: Bool): integer;
 var
   Policy: TDWMNCRENDERINGPOLICY;
@@ -232,12 +241,24 @@ begin
     raise Exception.Create('Failed to load uxtheme.dll');
 end;
 
+function HookGetSysColorBrush(nIndex: integer): HBrush; stdcall;
+begin
+  Result := clRed;
+end;
+
 function HookGetSysColor(nIndex: integer): DWORD; stdcall;
 begin
   if CS_Enable then begin
+
     if nIndex = COLOR_HIGHLIGHT then
     begin
       Result := (CS_HIGHLIGHT);
+      Exit;
+    end;
+
+    if nIndex = COLOR_Window then
+    begin
+      Result := clRed;
       Exit;
     end;
 
@@ -288,6 +309,61 @@ begin
       dwTextFlags2, pRect);
 end;
 
+function TaskDialogIndirectDark(const pTaskConfig: PTASKDIALOGCONFIG; pnButton: PInteger; pnRadioButton: PInteger; pfVerificationFlagChecked: PBOOL): HRESULT; stdcall;
+const
+  BTN_USER = $1000;
+var
+  Idx: Integer;
+  Index: Integer;
+  Button: TDialogButton;
+  Buttons: TDialogButtons;
+  DlgType: Integer = idDialogInfo;
+begin
+  with pTaskConfig^ do
+  begin
+    if (pszMainIcon = TD_INFORMATION_ICON) then
+      DlgType:= idDialogInfo
+    else if (pszMainIcon = TD_WARNING_ICON) then
+      DlgType:= idDialogWarning
+    else if (pszMainIcon = TD_ERROR_ICON) then
+      DlgType:= idDialogError
+    else if (pszMainIcon = TD_SHIELD_ICON) then
+      DlgType:= idDialogShield
+    else if (dwFlags and TDF_USE_HICON_MAIN <> 0) then
+    begin
+      if (hMainIcon = Windows.LoadIcon(0, IDI_QUESTION)) then
+        DlgType:= idDialogConfirm;
+    end;
+
+    Buttons:= TDialogButtons.Create(TDialogButton);
+    try
+      for Index:= 0 to cButtons - 1 do
+      begin
+        Button:= Buttons.Add;
+        Idx:= pButtons[Index].nButtonID;
+        Button.ModalResult:= (Idx + BTN_USER);
+        Button.Default:= (Idx = nDefaultButton);
+        Button.Caption:= UTF8Encode(UnicodeString(pButtons[Index].pszButtonText));
+      end;
+
+      Result:= DefaultQuestionDialog(UTF8Encode(UnicodeString(pszWindowTitle)),
+                                     UTF8Encode(UnicodeString(pszContent)), DlgType, Buttons, 0);
+
+      if Assigned(pnButton) then
+      begin
+        if (Result < BTN_USER) then
+          pnButton^:= Result
+        else begin
+          pnButton^:= Result - BTN_USER;
+        end;
+      end;
+    finally
+      Buttons.Free;
+    end;
+  end;
+  Result:= S_OK;
+end;
+
 procedure InstallCustomStyle;
 var
   hUxTheme: HMODULE;
@@ -296,6 +372,8 @@ begin
 
   Win32Theme := TWin32ThemeServices(ThemeServices);
   Pointer(WinGetSysColor) := InterceptCreate(@GetSysColor, @HookGetSysColor);
+
+  //Pointer(WinGetSysColorBrush):= InterceptCreate(@GetSysColorBrush, @HookGetSysColorBrush);
 
   hUxTheme := GetModuleHandle('uxtheme.dll');
   if hUxTheme = 0 then
@@ -346,6 +424,9 @@ begin
 
   WSForms.RegisterCustomForm;
   RegisterWSComponent(TCustomForm, TWin32WSCustomFormStyled);
+
+
+   TaskDialogIndirect:= @TaskDialogIndirectDark;
 end;
 
 procedure RemoveCustomStyle;
@@ -673,7 +754,7 @@ begin
         DC := HDC(wParam);
         SetBkColor(DC, ColorToRGB(CS_COMBOBOX_BACKGROUND));
         SetTextColor(DC, ColorToRGB(CS_COMBOBOX_TEXT));
-        Exit(LResult(CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND))));
+        Result := BrushComboBox;
       end
       else
         Result := DefSubclassProc(Window, Msg, wParam, lParam);
@@ -979,6 +1060,9 @@ begin
       BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
       DeleteObject(BrushMemo);
       BrushMemo := CreateSolidBrush(ColorToRGB(CS_Memo_COLOR));
+      DeleteObject(BrushComboBox);
+      BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
+
 
       if assigned(TCustomForm(FindControl(Window))) then
       begin
@@ -1001,13 +1085,19 @@ begin
     end;
 
   end;
-end;     
+end;
 
 class function TWin32WSCustomFormStyled.CreateHandle(const AWinControl: TWinControl;
   const AParams: TCreateParams): HWND;
 var
   Info: PWin32WindowInfo;
 begin
+  if CS_Enable and not (csDesigning in AWinControl.ComponentState) then
+  begin
+    AWinControl.Color := CS_FORM_COLOR_DEFAULT;      // Twój ciemny kolor tła
+    AWinControl.Font.Color := CS_FORM_FONT_DEFAULT;  // Twój jasny kolor czcionki
+  end;
+
   Result := inherited CreateHandle(AWinControl, AParams);
 
   Info := GetWin32WindowInfo(Result);
@@ -1020,7 +1110,7 @@ begin
   if not (csDesigning in AWinControl.ComponentState) then
   begin
     if not Cs_Enable then exit;
-    //AWinControl.Color:= CS_FORM_COLOR_DEFAULT;
+    AWinControl.Color:= CS_FORM_COLOR_DEFAULT;
     AWinControl.Font.Color := CS_FORM_FONT_DEFAULT;
     if TCustomForm(AWinControl).Menu <> nil then
       SetMenuBackground(TCustomForm(AWinControl).Menu.Handle);
@@ -1186,10 +1276,10 @@ end;
 initialization
 BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
 BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
-
+BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
 finalization
   RemoveCustomStyle;
   DeleteObject(BrushListBox);
-  DeleteObject(BrushMemo); 
+  DeleteObject(BrushMemo);
+  DeleteObject(BrushComboBox);
 end.
-
