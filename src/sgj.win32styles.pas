@@ -309,60 +309,6 @@ begin
       dwTextFlags2, pRect);
 end;
 
-function TaskDialogIndirectDark(const pTaskConfig: PTASKDIALOGCONFIG; pnButton: PInteger; pnRadioButton: PInteger; pfVerificationFlagChecked: PBOOL): HRESULT; stdcall;
-const
-  BTN_USER = $1000;
-var
-  Idx: Integer;
-  Index: Integer;
-  Button: TDialogButton;
-  Buttons: TDialogButtons;
-  DlgType: Integer = idDialogInfo;
-begin
-  with pTaskConfig^ do
-  begin
-    if (pszMainIcon = TD_INFORMATION_ICON) then
-      DlgType:= idDialogInfo
-    else if (pszMainIcon = TD_WARNING_ICON) then
-      DlgType:= idDialogWarning
-    else if (pszMainIcon = TD_ERROR_ICON) then
-      DlgType:= idDialogError
-    else if (pszMainIcon = TD_SHIELD_ICON) then
-      DlgType:= idDialogShield
-    else if (dwFlags and TDF_USE_HICON_MAIN <> 0) then
-    begin
-      if (hMainIcon = Windows.LoadIcon(0, IDI_QUESTION)) then
-        DlgType:= idDialogConfirm;
-    end;
-
-    Buttons:= TDialogButtons.Create(TDialogButton);
-    try
-      for Index:= 0 to cButtons - 1 do
-      begin
-        Button:= Buttons.Add;
-        Idx:= pButtons[Index].nButtonID;
-        Button.ModalResult:= (Idx + BTN_USER);
-        Button.Default:= (Idx = nDefaultButton);
-        Button.Caption:= UTF8Encode(UnicodeString(pButtons[Index].pszButtonText));
-      end;
-
-      Result:= DefaultQuestionDialog(UTF8Encode(UnicodeString(pszWindowTitle)),
-                                     UTF8Encode(UnicodeString(pszContent)), DlgType, Buttons, 0);
-
-      if Assigned(pnButton) then
-      begin
-        if (Result < BTN_USER) then
-          pnButton^:= Result
-        else begin
-          pnButton^:= Result - BTN_USER;
-        end;
-      end;
-    finally
-      Buttons.Free;
-    end;
-  end;
-  Result:= S_OK;
-end;
 
 procedure InstallCustomStyle;
 var
@@ -426,7 +372,9 @@ begin
   RegisterWSComponent(TCustomForm, TWin32WSCustomFormStyled);
 
 
-   TaskDialogIndirect:= @TaskDialogIndirectDark;
+   BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+   BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
+   BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
 end;
 
 procedure RemoveCustomStyle;
@@ -1120,9 +1068,6 @@ begin
     if Win32MajorVersion>5 then
     SetUxThemeAndDWM(Result);
 
-    BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
-    BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
-    BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
   end;
 end;
 
