@@ -1119,6 +1119,10 @@ begin
 
     if Win32MajorVersion>5 then
     SetUxThemeAndDWM(Result);
+
+    BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
+    BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
+    BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
   end;
 end;
 
@@ -1273,10 +1277,6 @@ begin
   end;
 end;
 
-initialization
-BrushListBox := CreateSolidBrush(ColorToRGB(CS_LISTBOX_COLOR));
-BrushMemo    := CreateSolidBrush(ColorToRGB(CS_MEMO_COLOR));
-BrushComboBox := CreateSolidBrush(ColorToRGB(CS_COMBOBOX_BACKGROUND));
 finalization
   RemoveCustomStyle;
   DeleteObject(BrushListBox);
